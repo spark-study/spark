@@ -1,10 +1,3 @@
----
-layout: post
-title:  "[스파크2 프로그래밍] 2장_RDD"
-date:   2019-07-16
-categories: Spark
----
-
 ### 2.1 RDD
 
 이번 장의 목표 : 데이터 모델로서의 추상적인 RDD 가 아닌, 프로그램 작성을 위한 API 관점에서 RDD 를 이해
