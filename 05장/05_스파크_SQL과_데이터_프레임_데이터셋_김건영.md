@@ -98,6 +98,7 @@
         - 주요 연산 및 사용법
             1. 액션 연산
                 - 연산 종류
+
                     연산 | 설명
                     -- | --
                     show() | 1. 데이터를 화면에 출력하는 연산 <br>2. 3개의 인자 존재(레코드 수, 표시할 값의 길이, 세로 출력 여부)<br> 3. 기본값은 20개 레코드수, 20바이트 길이 제한
@@ -109,6 +110,7 @@
 
             2. 기본 연산
                 - 연산 종류
+
                     연산 | 설명
                     -- | --
                     cache(), persist() | 1. 데이터를 메모리에 저장.<br> 2. [NONE, DISK_ONLY, DISK_ONLY_2, MEMORY_ONLY, MEMORY_ONLY_2, MEMORY_ONLY_SER, MEMORY_ONLY_SER_2, MEMORY_AND_DISK, MEMORY_AND_DISK_2, MEMORY_AND_DISK_SER, MEMORY_AND_DISK_SER_2, OFF_HEAP]옵션 가능<br> 3. cache는 MEMORY_AND_DISK 옵션의 persist
@@ -117,6 +119,7 @@
             
             3. 비타입 트랜스포메이션 연산
                 - 연산 종류
+
                     연산 | 설명
                     -- | --
                     alias(), as() | 칼럼이름에 별칭 부여
