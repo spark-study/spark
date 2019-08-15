@@ -178,3 +178,87 @@
             5. Pandas 연동
                 - PyArrow 라이브러리를 사용하여 스파크의 데이터프레임과 파이썬의 Pandas의 상호 변환 제공 -> 2.3버전부터 가능
                 - spark.sql.execution.arrow.enabled 옵션을 true로 하여야 한다.
+
+    6. ### 데이터 셋
+        
+        - 데이터 셋 사용 이유 = 데이터 개발 편의성과 컴파일 시 타입오류 검증이 가능(Row 클래스가 아닌 사용자 지정 클래스를 Type으로 사용하기 때문.)
+        
+        - 데이터 셋은 사용자 정의 타입 클래스를 사용하기 때문에 Spark SQL 최적화가 안될 수 있어, 성능면에서 악영향을 끼칠 수 있다.
+
+        - 데이터 셋 생성
+            1. 생성 방법 = 자바 객체, 기존 RDD, 데이터 프레임, 외부 source
+            
+            2. 생성 시 인코더 지정(필수) = 성능 최적화를 위해 기존 오브젝트를 스파크 내부 최적화 포맷으로 변환해야 하는데 때 사용(데이셋은 내부적으로 InternalRow클래스를 사용.)
+
+            3. 스칼라의 경우, 기본타입의 경우에는 import를 통하여 암묵적 인코더 사용 가능.
+
+            4. 자바의 경우, 데이터 프레임을 만든 후 이것을 데이터 셋으로 변환하여 사용해야 한다.
+
+            5. 데이터 프레임으로부터 생성시에는 type을 지정해야하기 때문에 as() 메서드를 통하여 생성할 수 있다.
+
+            6. range() 메서드를 통하여 간단한 샘플데이터 또한 생성 가능.
+
+            
+        - 타입 트랜스포메이션 연산
+            - 연산 종류
+                
+                연산 | 설명
+                -- | --
+                select() | 1. 데이터 프레임의 select 메서드와 동일<br> 2. 단, as() 메서드를 통해 type을 지정해야함.
+                as() | 1. 데이터 셋에 별칭 부여<br> 2. column에 부여하는 것이 아닌 데이터 셋에 타입을 부여.
+                distinct() | 중복을 제외한 요소만으로 데이터셋 반환
+                dropDuplicates() | distonct() 메서드에서 칼럼을 지정할 수 있는 기능 추가.
+                filter() | 사용자 정의 조건을 만족하는 데이터만으로 구성된 데이터 셋 반환.
+                map(), flatMap() | 1. RDD의 map(), flatMap() 메서드와 동일<br> 2. 단 데이터 셋의 타입을 인자로 사용 가능.<br> 3. 자바의 경우 인코더 지정 필수
+                groupByKey() | 1. RDD의 groupBy와 기능 동일<br> 2. KeyValueGroupedDataset 클래스 반환
+                agg() | 1.  데이터 프레임에서 본 agg() 메서드와 동일<br> 2. 단, 사용하는 칼럼은 반드시 TypeedColumn 클래스여야 한다.<br> 3. 사용가능한 집계 연산 = avg(), count(), sum(), sumLong()
+                mapValues(), reduceGroups() | 1. KeyValueGroupedDataset클래스의 매서드<br> 2. 맵연산, 리듀스 연산을 수행.
+        
+        - 하이브 연동
+            
+            1. 스파크에서는 별도의 하이브 서버없이 테이블로 save 및 load 가능(-> 자체적으로 DB, 테이블관련 메타 데이터 저장.)
+            2. 기존의 하이브 서버와 연동할 시 conf 디렉터리 하위에 hive-site.xml, core-site.xml, hdfs-site.xml 파일을 복사하여야 한다.
+        
+        - 분산 SQL 엔진
+            
+            1. 실행 방법으로는 bin 디렉터리 하위 start-thriftserver.sh 실행
+            2. 하이브 클라이언트인 beelin 수행시 스파크 SQL을 사용하는것으로 인해 하이브 클라이언트 수행하더라도, 엔진은 스파크를 사용한다는것을 알 수 있음
+        
+        - SparkSQL CLI
+            1. SQL 관련하여 메타데이터만을 사용하는 것이라면 간단하게 제공하는 기능
+            2. 실행방법으로는 bin 디렉터리의 spark-sql 실행.
+
+        - 쿼리 플랜과 디버깅
+            1. 스파크 세션, 스파크 스테이트, 스파크 컨텍스트
+                
+                용어 | 정의
+                -- | --
+                스파크 컨텍스트 | 스파크가 동작하기 위한 각종 백엔드 서비스에 대한 참조를 가지고 있는 객체.
+                세션 스테이트 | 스파크 세션의 상태 정보
+                스파크 세션 | 스파크 컨텍스트에 세션 상태 정보를 추가로 담은 것
+            
+            2. 스파크 세션은 최적화와 관련된 기능을 위해 사용하는 각종 메타 정보, 상태 정보를 가지고 있다.
+
+        - QueryExecution
+            
+            1. Spark SQL 사용시 최적화 과정에서 일어나는 일들을 확인할 수 있는 API.
+            2. QueryExecution에서 제공하는 실행 계획은 아래에서 위로 보여준다.
+            3. Query 실행은 아래와 같은 순으로 진행되며 최적화가 된다.
+                - LogicalPlan 생성(QueryExecution.logical 메서드로 보이는 계획)
+                - SessionState의 Analyzer가 적용된 LogicalPlan 생성(QueryExecution.analyzed 메서드로 보이는 계획)
+                - SessionState의 Optimizer가 적용된 LogicalPlan 생성(QueryExecution.optimizedPlan 메서드로 보이는 계획)
+                - SessionState의 SparkPlanner가 적용된 
+                SparkPlan 생성(QueryExecution.sparkPlanner 메서드로 보이는 계획)
+                - SparkPlan에 추가적인 최적화 과정 적용하여 SparkPlan 생성(QueryExecution.executedPlan 메서드로 보이는 계획)
+            
+        
+                
+                
+
+                
+
+
+
+
+
+
